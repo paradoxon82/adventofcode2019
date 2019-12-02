@@ -4,7 +4,6 @@ class OpcodeParser
 
   def self.parse(pos, codes)
     if codes[pos] == 99
-      puts "Programm exited with #{codes[0]} at pos 0"
       return -1
     end
 
@@ -26,6 +25,18 @@ class OpcodeParser
     return pos+4
   end
 
+  def self.iteration(input, noun, verb)
+    opcodes = input.clone
+    opcodes[1] = noun
+    opcodes[2] = verb
+
+    pos = 0
+    while (next_pos = parse(pos, opcodes)) != -1
+      pos = next_pos
+    end
+    opcodes[0]
+  end
+
 end
 
 if ARGV.size == 0
@@ -38,6 +49,8 @@ File.foreach(ARGV[0]) do |line|
   opcodes.concat(line.strip.split(',').map(&:to_i))
 end
 
+initial_state = opcodes.clone
+
 opcodes[1] = 12
 opcodes[2] = 2
 
@@ -46,4 +59,18 @@ while (next_pos = OpcodeParser.parse(pos, opcodes)) != -1
   puts "next pos #{next_pos}"
   pos = next_pos
 end
+puts "Programm exited with #{opcodes[0]} at pos 0"
+
+(0..99).each do |noun|
+  (0..99).each do |verb|
+    result = OpcodeParser.iteration(initial_state, noun, verb)
+    if result == 19690720
+      puts "verb #{verb} - noun #{noun}"
+      puts "solution: #{100*noun + verb}"
+      exit 0
+    end
+  end
+end
+
+puts "no combination found for verb and noun to produce 19690720"
 
