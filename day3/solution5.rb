@@ -183,6 +183,58 @@ class WireParser
       distance(cross)
     end.min
   end
+
+  def print_this(field)
+    x_min = field.keys.min
+    x_max = field.keys.max
+    y_min = nil
+    y_max = nil
+    #puts field
+    field.values.each do |y_vals|
+      min = y_vals.keys.min
+      max = y_vals.keys.max
+
+      y_min = (y_min.nil? || (y_min > min)) ? min : y_min
+      y_max = (y_max.nil? || (y_max < max)) ? max : y_max
+    end
+    puts "#{x_min} .. #{x_max}"
+    puts "#{y_min} .. #{y_max}"
+
+    y_max.downto(y_min).each do |y|
+      line = (x_min..x_max).map do |x|
+        field[x][y]
+      end.join
+      puts line
+    end
+  end
+
+  def add_line_to_field(line, field, direction)
+    x_1 = line[0][0]
+    x_2 = line[1][0]
+    y_1 = line[0][1]
+    y_2 = line[1][1]
+    [x_1,x_2].min.upto([x_1,x_2].max).each do |x|
+      [y_1,y_2].min.upto([y_1,y_2].max).each do |y|
+        field[x][y] = direction == :horizontal ? '-' : '|'
+      end
+    end
+  end
+
+  def print_field
+    field = Hash.new do |hash, key| 
+      hash[key] = Hash.new(' ')
+    end
+    @a_pos.each_cons(2) do |line|
+      add_line_to_field(line, field, get_direction(line))
+    end
+
+    @b_pos.each_cons(2) do |line|
+      add_line_to_field(line, field, get_direction(line))
+    end
+    field[0][0] = 'O'
+
+    print_this(field)
+  end
 end
 
 if ARGV.size.zero?
@@ -209,6 +261,8 @@ end
 directions[1].each do |dir|
   parser.add_direction_b(dir)
 end
+
+parser.print_field
 
 puts "min crossover: #{parser.check_crossovers}"
 puts "min crossover: #{parser.check_crossovers2}"
