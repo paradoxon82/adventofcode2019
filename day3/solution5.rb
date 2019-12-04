@@ -130,7 +130,9 @@ class WireParser
   def build_distances(positions)
     lines = []
     positions.each_cons(2) do |line|
-      add_but_check_self_cross(lines, line)
+      lines << line
+      # seems like we do not have to optimize
+      #add_but_check_self_cross(lines, line)
     end
     sum = 0
     distances = lines.map do |line|
@@ -262,7 +264,7 @@ directions[1].each do |dir|
   parser.add_direction_b(dir)
 end
 
-parser.print_field
+#parser.print_field
 
 puts "min crossover: #{parser.check_crossovers}"
 puts "min crossover: #{parser.check_crossovers2}"
