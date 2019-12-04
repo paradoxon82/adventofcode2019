@@ -6,6 +6,7 @@ class WireParser
     @a_pos = [[0, 0]]
     @b_pos = [[0, 0]]
     @crossovers = []
+    @crossovers_with_distances = []
   end
 
   def add_direction_a(direction)
@@ -93,6 +94,84 @@ class WireParser
     cross[0].abs + cross[1].abs
   end
 
+  def shorten_line_to(line, end_p)
+    [line[0], end_p]
+  end
+
+  def shorten_line_from(line, end_p)
+    [end_p, line[0]]
+  end
+
+  def add_but_check_self_cross(lines, line_to_add)
+    last_self_cross = nil
+    lines.each_with_index do |l, i|
+      if (cross = get_crossover(l, line_to_add))
+        last_self_cross = [cross, i]
+      end
+    end
+    if last_self_cross
+      cut_at = last_self_cross[1]
+      intersection = last_self_cross[0]
+      up_to = cut_at - 1
+      lines_up_to_self_cross = up_to >= 0 ? lines[0..up_to] : []
+      crossed_line = lines[cut_at]
+      lines_up_to_self_cross << shorten_line_to(crossed_line, intersection)
+      lines_up_to_self_cross << shorten_line_from(line_to_add, intersection)
+      lines.replace(lines_up_to_self_cross)
+    else
+      lines << line_to_add
+    end
+  end
+
+  def line_length(line)
+    (line[0][0] - line[1][0]).abs + (line[0][1] - line[1][1]).abs
+  end
+
+  def build_distances(positions)
+    lines = []
+    positions.each_cons(2) do |line|
+      add_but_check_self_cross(lines, line)
+    end
+    sum = 0
+    distances = lines.map do |line|
+      tmp = sum
+      sum += line_length(line)
+      tmp
+    end
+    [lines, distances]
+  end
+
+  def build_both_distances
+    @a_line_dist = build_distances(@a_pos)
+    @b_line_dist = build_distances(@b_pos)
+  end
+
+  def check_crossover2(line_a, line_b, length_up_to_here)
+    if (cross = get_crossover(line_a, line_b))
+      length_up_to_here += line_length(shorten_line_to(line_a, cross))
+      length_up_to_here += line_length(shorten_line_to(line_b, cross))
+      @crossovers_with_distances << [length_up_to_here, cross]
+    end
+  end
+
+  def length_up_to_here(length_a, i_a, length_b, i_b)
+    length_a[i_a] + length_b[i_b]
+  end
+
+  def check_crossovers2
+    build_both_distances()
+    @a_line_dist[0].each_with_index do |line_a, i_a|
+      @b_line_dist[0].each_with_index do |line_b, i_b|
+        length = length_up_to_here(@a_line_dist[1], i_a, @b_line_dist[1], i_b)
+        check_crossover2(line_a, line_b, length)
+      end
+    end
+    puts "second crossovers count #{@crossovers_with_distances.size}"
+    @crossovers_with_distances.map do |dist_cross|
+      dist_cross[0]
+    end.min
+  end
+
   def check_crossovers
     @a_pos.each_cons(2) do |line_a|
       @b_pos.each_cons(2) do |line_b|
@@ -132,3 +211,4 @@ directions[1].each do |dir|
 end
 
 puts "min crossover: #{parser.check_crossovers}"
+puts "min crossover: #{parser.check_crossovers2}"
