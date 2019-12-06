@@ -30,8 +30,10 @@ class OrbitBuilder
     unless @orbits[inner]
       @orbits[inner] = Orbit.new(inner)
     end
-    raise "orbit of #{outer} already registered!" if @orbits[outer]
-    @orbits[outer] = Orbit.new(outer)
+    unless @orbits[outer]
+      @orbits[outer] = Orbit.new(outer)
+    end
+    # TODO check if loops exist
     @orbits[inner].add_child(@orbits[outer])
   end
 
