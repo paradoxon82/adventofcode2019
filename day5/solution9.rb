@@ -47,6 +47,7 @@ class OpcodeParser
         3
       when 3, 4
         pos1 = codes[pos + 1]
+        op1 = modes[0].zero? ? codes[pos1] : pos1
         1
       else
         raise "unexpeced code #{opcode}"
@@ -60,7 +61,7 @@ class OpcodeParser
     when 3
       codes[pos1] = input_prompt.to_i
     when 4
-      puts "output: #{codes[pos1]}"
+      puts "output: #{op1}"
     end
 
     pos + op_count + 1
