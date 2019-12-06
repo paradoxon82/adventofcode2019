@@ -11,7 +11,7 @@ class OpcodeParser
     modes = [0, 0, 0] # default of 0
     input[0..-3].chars.reverse.each_with_index do |val, i|
       modes[i] = val.to_i
-      raise "unexpeced mode #{val} at position #{i}" if modes[i] != 0 && modes[i] != 1
+      raise "input: #{input} - unexpeced mode #{val} at position #{i}" if modes[i] != 0 && modes[i] != 1
     end
 
     [opcode, modes]
@@ -47,12 +47,15 @@ class OpcodeParser
         3
       when 3, 4
         pos1 = codes[pos + 1]
+        pos2 = codes[pos + 2]
         op1 = modes[0].zero? ? codes[pos1] : pos1
+        op2 = modes[1].zero? ? codes[pos2] : pos2
         1
       when 5, 6
         pos1 = codes[pos + 1]
         pos2 = codes[pos + 2]
         op1 = modes[0].zero? ? codes[pos1] : pos1
+        op2 = modes[1].zero? ? codes[pos2] : pos2
         2
       else
         raise "unexpeced code #{opcode}"
@@ -70,9 +73,9 @@ class OpcodeParser
     when 4
       puts "output: #{op1}"
     when 5
-      override_p = pos2 if op1 != 0
+      override_p = op2 if op1 != 0
     when 6
-      override_p = pos2 if op1 == 0
+      override_p = op2 if op1 == 0
     when 7
       codes[pos3] = (op1 < op2) ? 1 : 0
     when 8
