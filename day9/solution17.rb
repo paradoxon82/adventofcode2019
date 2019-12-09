@@ -79,10 +79,21 @@ class OpcodeParser
         raise "unknown mode #{modes[i]}"
       end
     end
-    if count == 3 && modes[3] == 0
-      puts 'unexpeced relative jump as assignment'
-    end
     operands
+  end
+
+  def save_result(result, pos, res_pos, modes, codes)
+    val = codes[pos + res_pos + 1]
+    save_position =
+      case modes[res_pos]
+      when 0
+        val
+      when 1
+        raise 'unrecognized mode 1 for result storage'
+      when 2
+        relative_base + val
+      end
+    codes[save_position] = result
   end
 
   def parse(pos, codes)
@@ -102,24 +113,10 @@ class OpcodeParser
     operation_size, operand_count =
       case opcode
       when 1, 2, 7, 8
-        # pos1 = codes[pos + 1]
-        # pos2 = codes[pos + 2]
-        # pos3 = codes[pos + 3]
-        # op1 = modes[0].zero? ? codes[pos1] : pos1
-        # op2 = modes[1].zero? ? codes[pos2] : pos2
-        #puts "op1 #{op1}, op2 #{op2}"
         [4, 3]
       when 3, 4, 9
-        # pos1 = codes[pos + 1]
-        # pos2 = codes[pos + 2]
-        # op1 = modes[0].zero? ? codes[pos1] : pos1
-        # op2 = modes[1].zero? ? codes[pos2] : pos2
         [2, 1]
       when 5, 6
-        # pos1 = codes[pos + 1]
-        # pos2 = codes[pos + 2]
-        # op1 = modes[0].zero? ? codes[pos1] : pos1
-        # op2 = modes[1].zero? ? codes[pos2] : pos2
         [3, 2]
       else
         raise "unexpeced code #{opcode}"
@@ -130,18 +127,23 @@ class OpcodeParser
     puts "ops: #{ops}"
     override_p = nil
 
+    result = nil
+    res_pos = nil
     case opcode
     when 1
-      codes[ops[2]] = ops[0] + ops[1]
+      res_pos = 2
+      result = ops[0] + ops[1]
     when 2
-      codes[ops[2]] = ops[0] * ops[1]
+      res_pos = 2
+      result = ops[0] * ops[1]
     when 3
       if input_empty?
         # stay at this position
         @await_input = true
         return pos
       end
-      codes[ops[0]] = input_prompt
+      res_pos = 0
+      result = input_prompt
     when 4
       @last_output = ops[0]
       @output_waiting = true
@@ -151,12 +153,16 @@ class OpcodeParser
     when 6
       override_p = ops[1] if ops[0] == 0
     when 7
-      codes[ops[2]] = (ops[0] < ops[1]) ? 1 : 0
+      res_pos = 2
+      result = (ops[0] < ops[1]) ? 1 : 0
     when 8
-      codes[ops[2]] = (ops[0] == ops[1]) ? 1 : 0
+      res_pos = 2
+      result = (ops[0] == ops[1]) ? 1 : 0
     when 9
       @relative_base += ops[0]
     end
+
+    save_result(result, pos, res_pos, modes, codes) if result && res_pos
 
     return override_p if override_p
 
