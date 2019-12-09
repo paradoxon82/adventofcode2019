@@ -64,7 +64,7 @@ class OpcodeParser
   end
 
   def modes_to_operands(pos, codes, modes, count)
-    puts "modes #{modes}"
+    #puts "modes #{modes}"
     operands = Array.new(count)
     (0...count).each do |i|
       val = codes[pos + i + 1]
@@ -122,9 +122,9 @@ class OpcodeParser
         raise "unexpeced code #{opcode}"
       end
 
-    puts "operation size #{operation_size}, operand count #{operand_count}"
+    #puts "operation size #{operation_size}, operand count #{operand_count}"
     ops = modes_to_operands(pos, codes, modes, operand_count)
-    puts "ops: #{ops}"
+    #puts "ops: #{ops}"
     override_p = nil
 
     result = nil
@@ -197,7 +197,7 @@ class Amplifier
   def iteration
     puts "iteration #{it_count} of #{name} starting at #{@position}"
     while parser.can_continue?
-      puts "position #{@position}"
+      #puts "position #{@position}"
       next_pos = parser.parse(@position, opcodes)
       #puts "next pos #{next_pos}"
       forward_output
@@ -240,3 +240,7 @@ op_hash =  Hash.new(0).merge(Hash[(0...opcodes.size).zip opcodes])
 
 opt = Amplifier.new('A', op_hash, 1)
 puts "BOOST keycode: #{opt.iteration}"
+
+op_hash =  Hash.new(0).merge(Hash[(0...opcodes.size).zip opcodes])
+opt = Amplifier.new('B', op_hash, 2)
+puts "coordinates: #{opt.iteration}"
