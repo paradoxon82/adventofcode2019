@@ -41,6 +41,16 @@ class LineOfSight
       end
     end
   end
+
+  def self.angle(a, b)
+    dx = b[0] - a[0]
+    dy = b[1] - a[1]
+    rad = Math.atan2(dx, -dy)
+    
+    rad = Math::PI + (Math::PI + rad) if rad < 0
+
+    rad
+  end
 end
 
 class StarfieldBuilder
@@ -84,15 +94,38 @@ class StarfieldBuilder
 
     vantage, obervations = observations.max_by { |vantage, obs| obs.size }
   end
+
+  def vaporize(ast)
+    @asteroids.delete(ast)
+  end
+
+  def vaporize_asteroids(station, stop_at)
+    last_end = 1
+    matching_asteroid = nil
+    while (reachable_asteroids = collect_observations(station)).any?
+      reachable_asteroids.sort_by do |asteroid|
+        LineOfSight.angle(station, asteroid)
+      end.each_with_index do |ast, i|
+        puts "vaporizing #{i + last_end}: #{ast.join(', ')}"
+        vaporize(ast)
+        matching_asteroid = ast if (i + last_end) == stop_at
+      end
+      last_end += reachable_asteroids.size
+    end
+    matching_asteroid
+  end
 end
 
 builder = StarfieldBuilder.new
 y = 0
 File.foreach(ARGV[0]) do |line|
   next if line.empty?
+
   builder.add_line(line, y)
-  y +=1
+  y += 1
 end
 
 vantage, observations = builder.best_observation
 puts "observed from #{vantage.join(', ')} - asteroids: #{observations.size}"
+matching = builder.vaporize_asteroids(vantage, 200)
+puts "matching #{matching[0]*100 + matching[1]}"
