@@ -231,8 +231,8 @@ class RobotBrain
 end
 
 class Robot
-  def initialize(opcodes)
-    @brain = RobotBrain.new('Brain', opcodes, 0)
+  def initialize(opcodes, first_tile = 0)
+    @brain = RobotBrain.new('Brain', opcodes, first_tile)
     @hull = Hash.new { |hash, key| hash[key] = 0 }
     @position = [0, 0]
     @orientations = [:up, :left, :down, :right]
@@ -262,6 +262,7 @@ class Robot
   end
 
   def move_one
+    @position = @position.clone
     case current_orientation
     when :up
       @position[1] +=1
@@ -300,6 +301,26 @@ class Robot
     end
     @hull.keys.size
   end
+
+  def print_picture
+    paint_all
+    #puts "keys: #{@hull.keys}"
+    min_x = @hull.keys.min_by(&:first).first
+    max_x = @hull.keys.max_by(&:first).first
+    min_y = @hull.keys.min_by(&:last).last
+    max_y = @hull.keys.max_by(&:last).last
+    puts "min_x #{min_x}"
+    puts "max_x #{max_x}"
+    puts "min_y #{min_y}"
+    puts "max_y #{max_y}"
+    #exit 0
+    (min_y..max_y).to_a.reverse.each do |y|
+      row = (min_x..max_x).map do |x|
+        @hull[[x,y]] == 0 ? ' ' : '#'
+      end
+      puts row.join
+    end
+  end
 end
 
 
@@ -321,3 +342,5 @@ op_hash =  Hash.new(0).merge(Hash[(0...opcodes.size).zip opcodes])
 opt = Robot.new(op_hash)
 puts "painted tiles: #{opt.paint_all}"
 
+opt = Robot.new(op_hash, 1)
+puts "painted tiles: #{opt.print_picture}"
