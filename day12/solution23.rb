@@ -29,11 +29,7 @@ class Position
   end
 
   def diff(a, b)
-    if a == b
-      0
-    else
-      a < b ? 1 : -1
-    end
+    -(a <=> b)
   end
 
   def calc_velo(other)
@@ -58,9 +54,9 @@ end
 class Moon
   attr_accessor :velocity, :position
 
-  def initialize(position)
+  def initialize(position, velocity = nil)
     @position = position
-    @velocity = Velocity.new
+    @velocity = velocity.nil? ? Velocity.new : velocity
   end
 
   def apply_velocity
@@ -89,6 +85,10 @@ class Moon
     potential_e * kinetic_e
   end
 
+  def clone
+    Moon.new(@position.clone, velocity.clone)
+  end
+
 end
 
 class OrbitKeeper
@@ -112,13 +112,43 @@ class OrbitKeeper
 
   def calculate_orbits(steps)
     steps.times do |step|
-      @moons.combination(2) do |m1, m2|
-        gravity(m1, m2)
-      end
-      @moons.each do |m|
-        velocity(m)
-      end
+      iterate_orbits
     end
+  end
+
+  def axis_status(axis)
+    @moons.map(&:position).map {|m| m.send(axis)} + @moons.map(&:velocity).map {|m| m.send(axis)}
+  end
+
+  def iterate_orbits
+    @moons.combination(2) do |m1, m2|
+      gravity(m1, m2)
+    end
+    @moons.each do |m|
+      velocity(m)
+    end
+  end
+
+  def calculate_interval(axis)
+    start_val = axis_status(axis)
+    iteration = 0
+    loop do
+      iterate_orbits
+      iteration += 1
+      break if start_val == axis_status(axis)
+    end
+    iteration
+  end
+
+  def calculate_until_repeat
+    interval_x = calculate_interval(:x)
+    puts "interval x #{interval_x}" 
+    interval_y = calculate_interval(:y)
+    puts "interval y #{interval_y}" 
+    interval_z = calculate_interval(:z)
+    puts "interval z #{interval_z}" 
+    first = interval_x.lcm(interval_y)
+    first.lcm(interval_z)
   end
 
   def total_energy
@@ -138,3 +168,4 @@ File.foreach(ARGV[0]) do |line|
 end
 moves.calculate_orbits(1000)
 puts "total energy: #{moves.total_energy}"
+puts "repeating orbits at: #{moves.calculate_until_repeat()}"
