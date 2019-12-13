@@ -305,6 +305,7 @@ class ArcadeSetup
   def print_picture
 
     puts "score: #{@score}"
+    puts "blocks: #{count_blocks}"
     #puts "keys: #{@field.keys}"
     min_x = @field.keys.min_by(&:first).first
     max_x = @field.keys.max_by(&:first).first
@@ -332,8 +333,12 @@ class ArcadeSetup
   end
 
   def count_blocks
-    iterate_and_print
     @field.values.count {|val| val == 2}
+  end
+
+  def run_and_count_blocks
+    iterate_and_print
+    count_blocks
   end
 
   def play_game
@@ -360,6 +365,6 @@ end
 op_hash =  Hash.new(0).merge(Hash[(0...opcodes.size).zip opcodes])
 
 opt = ArcadeSetup.new(op_hash)
-puts "block tiles: #{opt.count_blocks}"
+puts "block tiles: #{opt.run_and_count_blocks}"
 opt = ArcadeSetup.new(op_hash, true)
 opt.play_game
