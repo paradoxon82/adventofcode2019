@@ -243,11 +243,12 @@ class Arcade
       end
     end
     next_iteration
-    all_outputs
+    puts "output size: #{all_outputs.size}"
+    take_all_outputs
   end
 
   def add_input(input)
-    puts "add input #{input}"
+    #puts "add input #{input}"
     parser.add_input(input)
   end
 
@@ -266,6 +267,12 @@ class Arcade
     @output_values
   end
 
+  def take_all_outputs
+    out = @output_values.clone
+    @output_values.clear
+    out
+  end
+
 end
 
 class ArcadeSetup
@@ -279,8 +286,10 @@ class ArcadeSetup
 
   def paint(x, y, val)
     if (x == -1 &&  y == 0)
+      #puts "score #{val}"
       @score = val
     else
+      #puts "at #{x}/#{y} #{val}"
       @field[[x,y]] = val
     end
   end
