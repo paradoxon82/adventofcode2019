@@ -105,21 +105,32 @@ class ReactionParser
     @reactions.values.map(&:remainder)
   end
 
+  def produce(product, request)
+    sum = 0
+    @reactions[product].request_output(request).each do |input_name_sub, count|
+      sum += get_input_count(input_name_sub, count)
+    end
+    sum
+  end
+
   def produce_with(product, ore_name, ore_count)
     @ore_name = ore_name
-    sum = 0
     fuel = 0
-    start_remainder = nil
-    found = false
-    while start_remainder != remainder || fuel == 1
-      @reactions[product].request_output(1).each do |input_name_sub, count|
-        sum += get_input_count(input_name_sub, count)
-      end
-      fuel += 1
-      start_remainder = remainder unless start_remainder
-      puts "ore cound #{sum}"
+    to_produce = 1
+    remaining_ore = ore_count
+    cost_of_one = nil
+    while to_produce > 0
+      last_cost = produce(product, to_produce)
+      break if last_cost > remaining_ore
+      cost_of_one = last_cost if to_produce == 1
+      fuel += to_produce
+      remaining_ore -= last_cost
+      # produce around half of what the remaining ore allows us
+      puts "last_cost #{last_cost}"
+      to_produce = (remaining_ore / 2) / cost_of_one
+      to_produce = 1 if to_produce == 0
+      puts "produce in next round #{to_produce}, remaining ore #{remaining_ore}, fuel sum #{fuel}"
     end
-    puts "fuel produced: #{fuel}, remainder: #{remainder}"
     fuel
   end
 
@@ -134,6 +145,6 @@ end
 ore_sum = parser.count_input_for('FUEL', 'ORE')
 puts "Sum of ORE input #{ore_sum}"
 
-#ore_count = 1_000_000_000_000
-#fuel_sum = parser.produce_with('FUEL', 'ORE', ore_count)
-#puts "fuel produced: #{fuel_sum}"
+ore_count = 1_000_000_000_000
+fuel_sum = parser.produce_with('FUEL', 'ORE', ore_count)
+puts "fuel produced: #{fuel_sum}"
