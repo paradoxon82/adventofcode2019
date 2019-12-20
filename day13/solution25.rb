@@ -190,6 +190,10 @@ class Arcade
     @output_values = []
   end
 
+  def relative_base
+    parser.relative_base
+  end
+
   def next_iteration
     @it_count += 1
   end
@@ -215,15 +219,22 @@ class Arcade
     end
   end
 
-  def provide_joystick
+  def guess_key
+
+  end
+
+  def provide_joystick(provider)
     dir = nil
     while dir.nil?
       dir = key_to_direction(STDIN.getch)
+      if (dir.nil?)
+        dir = provider.guess_key()
+      end
     end
     add_input(dir)
   end
 
-  def iteration
+  def iteration(provider)
     #clear_output
     end_loop = false
     #puts "iteration #{it_count} of #{name} starting at #{@position}"
@@ -238,12 +249,13 @@ class Arcade
       break if end_loop      
       if parser.await_input?
         puts "move?"
-        provide_joystick
+        provide_joystick(provider)
         end_loop = true
       end
     end
     next_iteration
     puts "output size: #{all_outputs.size}"
+    check_if_score_changed
     take_all_outputs
   end
 
@@ -254,6 +266,14 @@ class Arcade
 
   def clear_output
     @output_values.clear
+  end
+
+  def check_if_score_changed
+     @output_values.each_slice(3) do |slice|
+      if slice[0] -1 && slice[1] == 0
+        puts "score changed to #{slice[2]}"
+      end
+    end
   end
 
   def record_output
@@ -303,7 +323,7 @@ class ArcadeSetup
     when 2
       '#'
     when 3
-      '-'
+      '_'
     when 4
       '*'
     else
@@ -333,8 +353,34 @@ class ArcadeSetup
     end
   end
 
+  def guess_key
+    puts "ball pos #{ball_pos}"
+    puts "paddle pos #{paddle_pos}"
+    if ball_pos && paddle_pos
+      ball_x <=> paddle_x
+    else
+      0
+    end
+  end
+
+  def ball_pos
+    @field.key(4)
+  end
+
+  def ball_x
+    ball_pos[0]
+  end
+
+  def paddle_pos
+    @field.key(3)
+  end
+
+  def paddle_x
+    paddle_pos[0]
+  end
+
   def iterate_and_print
-    outputs = @brain.iteration
+    outputs = @brain.iteration(self)
     outputs.each_slice(3) do |slice|
       paint(*slice)
     end
@@ -350,9 +396,27 @@ class ArcadeSetup
     count_blocks
   end
 
+  def diff_hash(before, after)
+    new_keys = (after.keys - before.keys)
+    puts "relative_base: #{@brain.relative_base}"
+    puts "new values:"
+    new_keys.each do |key|
+      puts "#{key} : #{after[key]}"
+    end
+    puts "changed values:"
+    before.each do |k, v|
+      if v != after[k]
+        puts "#{k} : #{v} => #{after[k]}"
+      end
+    end
+  end
+
   def play_game
     while !@brain.halt?
+      before = @brain.opcodes.clone
       iterate_and_print
+      after = @brain.opcodes.clone
+      #diff_hash(before, after)
     end
   end
 end
